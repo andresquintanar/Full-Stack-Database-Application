@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel History</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Quicksand&display=swap">
+<style>
+    body {
+        margin: 0;
+        font-family: 'Quicksand', sans-serif;
+    }
+
+    .sidebar {
+        height: 100vh;
+        width: 20px;
+        background-color: grey;
+        padding: 20px;
+        position: fixed;
+        transition: width 0.3s;
+        overflow: hidden;
+    }
+
+    .sidebar:hover {
+        width: 200px;
+    }
+
+    .sidebar:hover a{
+        opacity: 1;
+    }
+
+    .sidebar a {
+        text-decoration: none;
+        color: white;
+        display: block;
+        margin-bottom: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .sidebar a:hover {
+        text-decoration: underline;
+    }
+
+    .content-container {
+        transition: margin-left 0.3s;
+        margin-left: 50px;
+        padding: 20px;
+    }
+
+    .sidebar:hover + .content-container {
+        margin-left: 260px;
+    }
+
+    h1 {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .thumbnails {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 15px;
+    }
+
+    .gallery__item {
+        position: relative;
+        grid-column: span 1;
+        grid-row: span 30;
+    }
+
+    .thumbnail__img {
+        width: 100%;
+        height: 75%; /* Set the height to 70% */
+        object-fit: cover;
+    }
+
+    .overlay {
+        background-color: rgba(0, 0, 0, 0.6);
+        font-size: smaller;
+        color: #FFF;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column; /* Ensure a vertical layout */
+        justify-content: flex-end; /* Align items at the end */
+        padding: 10px; /* Add some padding for better readability */
+        opacity: 0.6;
+    }
+
+    .gallery__item:hover .overlay {
+        visibility: visible;
+    }
+
+    .filter-bar {
+        text-align: right;
+        margin-bottom: 20px;
+        padding-right: 50px;
+    }
+    /* Tablets - Screen sizes <= 991px */
+    @media (max-width: 991px) {
+        .thumbnails {
+            grid-template-columns: repeat(2, 1fr); /* Display two thumbnails per row */
+        }
+    }
+
+    /* Mobile - Screen sizes <= 767px */
+    @media (max-width: 767px) {
+        .thumbnails {
+            grid-template-columns: 1fr; /* Display two thumbnails per row */
+        }
+    }
+</style>
+
+
+</head>
+<body>
+    <div class="sidebar">
+        <a href="{{ url_for('home') }}"><em>Home</em></a>
+        <a href="{{ url_for('profile') }}"><em>Profile</em></a>
+        <a href="{{ url_for('content') }}"><em>Content</em></a>
+        <a href="{{ url_for('restaurants') }}"><em>Restaurants</em></a>
+    </div>
+    <div class="content-container">
+        <h1>Travel History</h1>
+        <div class="filter-bar">
+            <label for="sort-by">Sort by:</label>
+            <select id="sort-by">
+                <option value="date">Date</option>
+                <option value="rating">Rating</option>
+            </select>
+            <select id="sort-order">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+            <button onclick="sortBySelection()" id="sort-thumbnails-btn">Sort</button>
+            <label for="sort-by-loc">Filter through location:</label>
+                <input type="text" id="location-input" placeholder="Enter location">
+                <button onclick="searchByLocation()" id="search-location-btn">Search</button>
+            <label for="thumbnail-count">Number of Thumbnails:</label>
+            <input type="number" id="thumbnail-count" min="1" max="100">
+            <button onclick="updateThumbnails()" id="update-thumbnails-btn">Update Thumbnails</button>
+            <button onclick="resetFilters()" id="reset-filters-btn">Reset Filters</button>
+        </div> <!-- .filter-bar -->
+        <div class="thumbnails" id="thumbnail-container">
+            {% for entry in entry%}
+            <div class="gallery__item">
+                <img src="{{ entry.imageURL.strip('\'') }}" alt="{{ entry.location }}" class="thumbnail__img">
+                <div class="overlay" rating="{{ entry.rating }}" date="{{ entry.date }}">
+                    <p><b>{{ entry.date }} | {{ entry.location }} | {{ entry.rating }} / 10</b></p>
+                    <p>{{ entry.comments }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div> <!-- .thumbnails -->
+    </div><!-- .content -->
+
+</body>
+<script>
+    function sortBySelection() {
+    const sortBy = document.getElementById('sort-by').value;
+    const sortOrder = document.getElementById('sort-order').value;
+    const thumbnailsContainer = document.getElementById('thumbnail-container');
+    const thumbnails = Array.from(thumbnailsContainer.getElementsByClassName('gallery__item'));
+
+    thumbnails.sort((a, b) => {
+        let comparison = 0;
+
+        if (sortBy === 'date') {
+            const dateA = new Date(a.querySelector('.overlay').getAttribute('date')).getTime();
+            const dateB = new Date(b.querySelector('.overlay').getAttribute('date')).getTime();
+            comparison = dateA - dateB;
+        } else if (sortBy === 'rating') {
+            const ratingA = parseFloat(a.querySelector('.overlay').getAttribute('rating'));
+            const ratingB = parseFloat(b.querySelector('.overlay').getAttribute('rating'));
+            comparison = ratingA - ratingB;
+        }
+
+        if (sortOrder === 'desc') {
+            comparison *= -1;
+        }
+
+        return comparison;
+    });
+
+    thumbnails.forEach(thumbnail => {
+        thumbnailsContainer.appendChild(thumbnail);
+    });
+}
+
+    function updateThumbnails() {
+        const thumbnailCount = parseInt(document.getElementById('thumbnail-count').value);
+        const thumbnails = document.querySelectorAll('.gallery__item');
+
+        thumbnails.forEach((thumbnail, index) => {
+        if (index < thumbnailCount) {
+            thumbnail.style.display = 'block';
+        } else {
+            thumbnail.style.display = 'none';
+        }
+        });
+    }
+
+    function searchByLocation() {
+        const locationInput = document.getElementById('location-input').value.toLowerCase();
+        const thumbnails = document.querySelectorAll('.gallery__item');
+
+        thumbnails.forEach(thumbnail => {
+            const thumbnailLocation = thumbnail.querySelector('.thumbnail__img').getAttribute('alt').toLowerCase();
+        if (thumbnailLocation.includes(locationInput)) {
+            thumbnail.style.display = 'block';
+        } else {
+            thumbnail.style.display = 'none';
+        }
+        });
+  }
+    function resetFilters() {
+    // Reset location input to empty string
+    document.getElementById('location-input').value = '';
+
+    // Reset thumbnail count to default (4)
+    document.getElementById('thumbnail-count').value = '';
+
+    // Reset displayed thumbnails
+    const thumbnails = document.querySelectorAll('.gallery__item');
+    thumbnails.forEach(thumbnail => {
+        thumbnail.style.display = 'block'; // Display all thumbnails
+    });
+}
+
+
+
+    document.getElementById('reset-filters-btn').addEventListener('click', resetFilters);
+    document.getElementById('sort-thumbnails-btn').addEventListener('click', sortBySelection);
+    document.getElementById('search-location-btn').addEventListener('click', searchByLocation);
+    document.getElementById('update-thumbnails-btn').addEventListener('click', updateThumbnails);
+</script>
+</html>
