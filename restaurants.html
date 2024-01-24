@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Quicksand&display=swap">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<style>
+    body {
+        display: flex;
+        font-family: 'Quicksand', sans-serif;
+        margin: 0;
+    }
+
+    .sidebar {
+        height: 100vh;
+        width: 20px;
+        background-color: gray;
+        padding: 20px;
+        position: fixed;
+        transition: width 0.3s;
+    }
+
+    .sidebar:hover {
+        width: 200px;
+    }
+
+    .sidebar:hover a{
+        opacity: 1;
+    }
+
+    .sidebar a {
+        text-decoration: none;
+        color: white;
+        display: block;
+        margin-bottom: 10px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .sidebar a:hover {
+        text-decoration: underline;
+    }
+
+    .container {
+        margin-left: 50px;
+        padding: 20px;
+        transition: margin-left 0.3s;
+    }
+
+    .sidebar:hover + .container {
+        margin-left: 220px;
+    }
+
+    h1 {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .thumbnails {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 15px;
+    }
+
+    .gallery__item {
+        position: relative;
+        grid-column: span 1;
+        grid-row: span 30;
+    }
+
+    .thumbnail__img {
+        width: 100%;
+        height: 75%;
+        object-fit: cover;
+    }
+
+   .overlay {
+        background-color: rgba(0, 0, 0, 0.6);
+        font-size: smaller;
+        color: #FFF;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column; /* Ensure a vertical layout */
+        justify-content: flex-end; /* Align items at the end */
+        padding: 10px; /* Add some padding for better readability */
+        opacity: 0.6;
+    }
+
+    .gallery__item:hover .overlay {
+        visibility: visible;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .toggle-bar {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+.toggle-icon {
+    margin-right: 5px;
+}
+
+#add-entry-form-fields {
+    display: none;
+}
+
+#add-entry-form-fields.active {
+    display: block;
+}
+.toggle-bar-edit {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    background-color: #f0f0f0;
+    padding: 10px;
+}
+
+.toggle-bar-restaurant-edit {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        background-color: #f0f0f0;
+        padding: 10px;
+    }
+
+.toggle-bar-restaurant-search {
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        background-color: #f0f0f0;
+        padding: 10px;
+    }
+
+.toggle-icon {
+    margin-right: 5px;
+}
+
+.toggle-edit-icon {
+        margin-right: 5px;
+    }
+
+.toggle-search-icon {
+        margin-right: 5px;
+    }
+
+#edit-restaurant-fields {
+    display: none;
+}
+
+#edit-restaurant-fields.active {
+    display: block;
+}
+
+#delete-restaurant-form-fields {
+    display: none;
+}
+
+#delete-restaurant-form-fields.active {
+    display: block;
+}
+
+#search-restaurant-form-fields {
+    display: none;
+}
+
+#search-restaurant-form-fields.active {
+    display: block;
+}
+
+
+
+</style>
+<body>
+    <div class="sidebar">
+        <a href="{{ url_for('home') }}"><em>Home</em></a>
+        <a href="{{ url_for('profile') }}"><em>Profile</em></a>
+        <a href="{{ url_for('content') }}"><em>Content</em></a>
+        <a href="{{ url_for('restaurants') }}"><em>Restaurants</em></a>
+    </div>
+
+    <div class="container">
+        <h1>Welcome, {{ user }}!</h1>
+
+        <h2>Your Most Recent Restaurant History</h2>
+
+        <div class="thumbnails">
+            {% for entry in entry[:4]|sort(attribute='date', reverse=true) %}
+            <div class="gallery__item">
+                <img src="{{ entry.imageURL.strip('\'') }}" alt="{{ entry.location }}" class="thumbnail__img">
+                <div class="overlay">
+                    <p><b>{{ entry.name }} | {{ entry.date }} | {{ entry.item }} | {{ entry.location }} | {{ entry.rating }} / 10</b></p>
+                    <p>{{ entry.comments }}</p>
+                </div>
+            </div>
+            {% endfor %}
+
+        </div> <!-- .thumbnails -->
+
+        <div class="toggle-bar" tabindex="0">
+            <span class="toggle-icon">&#9660;</span> Add New Restaurant Entry
+        </div>
+        <form id="add-entry-form-fields" action="/add_restaurant" method="POST" class="hidden">
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="text" class="form-control" name="date" required placeholder="YYYY-MM-DD">
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" class="form-control" name="location" required placeholder="Los Angeles, California">
+            </div>
+
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" class="form-control" name="name" required placeholder="McDonald's">
+            </div>
+
+            <div class="form-group">
+                <label for="item">Item:</label>
+                <input type="text" class="form-control" name="item" required placeholder="Big Mac with fries">
+            </div>
+
+            <div class="form-group">
+                <label for="rating">Food Rating (1-10):</label>
+                <input type="number" class="form-control" name="rating" min="1" max="10" required placeholder="1-10">
+            </div>
+
+            <div class="form-group">
+                <label for="image">Image URL: </label>
+                <input type="text" class="form-control" name="image" required>
+            </div>
+
+            <div class="form-group">
+                <label for="comments">Comments:</label>
+                <textarea class="form-control" name="comments"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Restaurant Entry</button>
+        </form>
+        <div class="toggle-bar-edit" tabindex="0">
+            <span class="toggle-icon">&#9660;</span> Edit Restaurant Entry
+        </div>
+        <form id="edit-restaurant-fields" action="/action/edit_restaurant" method="POST" class="hidden">
+            <div class="container">
+                {% for entry in entry %}
+                <div class="show-entries">
+                    <p>unique_id: {{ entry.unique_id }}</p>
+                    <p>Name: {{ entry.name }} | Date: {{ entry.date }} | Item: {{ entry.item }} | Rating: {{ entry.rating }}</p>
+                    <p> Location: {{ entry.location }} | Comments: {{ entry.comments }}</p>
+                    <p> ImageUrl: {{ entry.imageURL }} </p>
+                    <p>_____________________________________________________________________________________</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="unique_id">Unique_id of Entry you would like to edit:</label>
+                <input type="text" class="form-control" name="unique_id" required placeholder="unique_id">
+            </div>
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="text" class="form-control" name="date" required placeholder="YYYY-MM-DD">
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" class="form-control" name="location" required placeholder="Los Angeles, California">
+            </div>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" class="form-control" name="name" required placeholder="McDonald's">
+            </div>
+            <div class="form-group">
+                <label for="item">Item:</label>
+                <input type="text" class="form-control" name="item" required placeholder="Big Mac">
+            </div>
+
+            <div class="form-group">
+                <label for="rating">Trip Rating (1-10):</label>
+                <input type="number" class="form-control" name="rating" min="1" max="10" required placeholder="1-10">
+            </div>
+
+            <div class="form-group">
+                <label for="image">Image URL: </label>
+                <input type="text" class="form-control" name="image" required>
+            </div>
+
+            <div class="form-group">
+                <label for="comments">Comments:</label>
+                <textarea class="form-control" name="comments"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Edit Restaurant Entry</button>
+        </form>
+        <div class="toggle-bar-restaurant-search" tabindex="0">
+            <span class="toggle-search-icon">&#9660;</span> Filter Restaurants
+        </div>
+        <form id="search-restaurant-form-fields" action="/action/search_restaurants" method="POST" class="hidden">
+            <div class="container">
+                <select name="place">
+                {% for location in locations %}
+                <OPTION value='{{location}}'>{{location}}</option>
+                {% endfor %}
+                    <OPTION value=''></option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filter Restaurants </button>
+        </form>
+
+        <div class="toggle-bar-restaurant-edit" tabindex="0">
+            <span class="toggle-edit-icon">&#9660;</span> Delete Restaurant Entry
+        </div>
+        <form id="delete-restaurant-form-fields" action="/action/delete_restaurant" method="POST" class="hidden">
+            <div class="container">
+                {% for entry in entry %}
+                <div class="show-entries">
+                    <p>unique_id: {{ entry.unique_id }}</p>
+                    <p>Name: {{ entry.name }} | Date: {{ entry.date }} | Item: {{ entry.item }} | Rating: {{ entry.rating }}</p>
+                    <p> Location: {{ entry.location }} | Comments: {{ entry.comments }}</p>
+                    <p> ImageUrl: {{ entry.imageURL }} </p>
+                    <p>_____________________________________________________________________________________</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="unique_id">Unique_id of Entry you would like to edit:</label>
+                <input type="text" class="form-control" name="unique_id" required placeholder="unique_id">
+            </div>
+            <button type="submit" class="btn btn-primary">Delete Restaurant Entry</button>
+        </form>
+        <form action="/logout" method="POST">
+            <input type="submit" value="Log out">
+        </form>
+
+        <!--
+        <a href="/logout">Logout</a>
+        -->
+    </div>
+</body>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const toggleBar = document.querySelector('.toggle-bar');
+        const formFields = document.getElementById('add-entry-form-fields');
+
+        toggleBar.addEventListener('click', function () {
+            formFields.classList.toggle('active');
+            if (formFields.classList.contains('active')) {
+                toggleBar.querySelector('.toggle-icon').innerHTML = '&#9650;'; // Up arrow
+            } else {
+                toggleBar.querySelector('.toggle-icon').innerHTML = '&#9660;'; // Down arrow
+            }
+        });
+    });
+        document.addEventListener("DOMContentLoaded", function () {
+        const toggleBarEdit = document.querySelector('.toggle-bar-edit');
+        const editProfileFields = document.getElementById('edit-restaurant-fields');
+
+        toggleBarEdit.addEventListener('click', function () {
+            editProfileFields.classList.toggle('active');
+            if (editProfileFields.classList.contains('active')) {
+                toggleBarEdit.querySelector('.toggle-icon').innerHTML = '&#9650;'; // Up arrow
+            } else {
+                toggleBarEdit.querySelector('.toggle-icon').innerHTML = '&#9660;'; // Down arrow
+            }
+        });
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+    const toggleBarEdit = document.querySelector('.toggle-bar-restaurant-search'); // Corrected selector
+    const editRestaurantFields = document.getElementById('search-restaurant-form-fields'); // Corrected ID
+
+    toggleBarEdit.addEventListener('click', function () {
+        editRestaurantFields.classList.toggle('active');
+        if (editRestaurantFields.classList.contains('active')) {
+            toggleBarEdit.querySelector('.toggle-search-icon').innerHTML = '&#9650;'; // Up arrow
+        } else {
+            toggleBarEdit.querySelector('.toggle-search-icon').innerHTML = '&#9660;'; // Down arrow
+        }
+    });
+});
+    document.addEventListener("DOMContentLoaded", function () {
+    const toggleBarEdit = document.querySelector('.toggle-bar-restaurant-edit'); // Corrected selector
+    const editRestaurantFields = document.getElementById('delete-restaurant-form-fields'); // Corrected ID
+
+    toggleBarEdit.addEventListener('click', function () {
+        editRestaurantFields.classList.toggle('active');
+        if (editRestaurantFields.classList.contains('active')) {
+            toggleBarEdit.querySelector('.toggle-edit-icon').innerHTML = '&#9650;'; // Up arrow
+        } else {
+            toggleBarEdit.querySelector('.toggle-edit-icon').innerHTML = '&#9660;'; // Down arrow
+        }
+    });
+});
+</script>
+</html>
